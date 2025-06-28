@@ -307,6 +307,69 @@ impl Buffer {
     }
 
     /// Print at most the first `width` characters of a string if enough space is available
+    /// until the end of the line.
+    /// If `ellipsis` is true appends a `…` at the end of truncated lines.
+    /// If `truncate_start` is `true`, adds a `…` at the beginning of truncated lines.
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_string_anchored(
+        &mut self,
+        x: u16,
+        y: u16,
+        truncate_start: bool,
+        truncate_end: bool,
+        string: &str,
+        width: usize,
+        style: impl Fn(usize) -> Style, // Map a grapheme's string offset to a style
+    ) -> (u16, u16) {
+        // prevent panic if out of range
+        if !self.in_bounds(x, y) || width == 0 {
+            return (x, y);
+        }
+
+        let mut index = self.index_of(x, y);
+        let mut rendered_width = 0;
+        let mut graphemes = string.grapheme_indices(true);
+
+        if truncate_start {
+            for _ in 0..graphemes.next().map(|(_, g)| g.width()).unwrap_or_default() {
+                self.content[index].set_symbol("…");
+                index += 1;
+                rendered_width += 1;
+            }
+        }
+
+        for (byte_offset, s) in graphemes {
+            let grapheme_width = s.width();
+            if truncate_end && rendered_width + grapheme_width >= width {
+                break;
+            }
+            if grapheme_width == 0 {
+                continue;
+            }
+
+            self.content[index].set_symbol(s);
+            self.content[index].set_style(style(byte_offset));
+
+            // Reset following cells if multi-width (they would be hidden by the grapheme):
+            for i in index + 1..index + grapheme_width {
+                self.content[i].reset();
+            }
+
+            index += grapheme_width;
+            rendered_width += grapheme_width;
+        }
+
+        if truncate_end {
+            for _ in 0..width.saturating_sub(rendered_width) {
+                self.content[index].set_symbol("…");
+                index += 1;
+            }
+        }
+
+        (x, y)
+    }
+
+    /// Print at most the first `width` characters of a string if enough space is available
     /// until the end of the line. If `ellipsis` is true appends a `…` at the end of
     /// truncated lines. If `truncate_start` is `true`, truncate the beginning of the string
     /// instead of the end.
