@@ -1879,7 +1879,6 @@ impl Editor {
                 self.old_file_locs.get(&path).map(|x| x.to_owned())
             {
                 let (view, doc) = current!(self);
-
                 let doc_len = doc.text().len_chars();
                 // Don't restore the view and selection if the selection goes beyond the file's end
                 if !selection.ranges().iter().any(|range| range.to() > doc_len) {

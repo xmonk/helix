@@ -32,12 +32,7 @@ use crate::{
 use log::{debug, error, info, warn};
 #[cfg(not(feature = "integration"))]
 use std::io::stdout;
-use std::{
-    collections::HashMap,
-    io::stdin,
-    path::Path,
-    sync::Arc,
-};
+use std::{collections::HashMap, io::stdin, path::Path, sync::Arc};
 
 #[cfg(not(windows))]
 use anyhow::Context;
@@ -221,7 +216,11 @@ impl Application {
                         // NOTE: this isn't necessarily true anymore. If
                         // `--vsplit` or `--hsplit` are used, the file which is
                         // opened last is focused on.
-                        if !positions.is_empty() {
+                        // Only set position if non-default positions were explicitly provided
+                        let has_explicit_positions = !positions.is_empty()
+                            && !positions.iter().all(|pos| pos.row == 0 && pos.col == 0);
+
+                        if has_explicit_positions {
                             let view_id = editor.tree.focus;
                             let doc = doc_mut!(editor, &doc_id);
                             let selection = positions
