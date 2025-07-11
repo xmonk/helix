@@ -231,38 +231,51 @@ fn force_buffer_close(
     buffer_close_by_ids_impl(cx, &document_ids, true)
 }
 
-fn buffer_gather_others_impl(editor: &mut Editor) -> Vec<DocumentId> {
-    let current_document = &doc!(editor).id();
-    editor
-        .documents()
-        .map(|doc| doc.id())
-        .filter(|doc_id| doc_id != current_document)
-        .collect()
+fn buffer_gather_others_impl(editor: &mut Editor, skip_visible: bool) -> Vec<DocumentId> {
+    if skip_visible {
+        let visible_document_ids = editor
+            .tree
+            .views()
+            .map(|view| &view.0.doc)
+            .collect::<HashSet<_>>();
+        editor
+            .documents()
+            .map(|doc| doc.id())
+            .filter(|doc_id| !visible_document_ids.contains(doc_id))
+            .collect()
+    } else {
+        let current_document = &doc!(editor).id();
+        editor
+            .documents()
+            .map(|doc| doc.id())
+            .filter(|doc_id| doc_id != current_document)
+            .collect()
+    }
 }
 
 fn buffer_close_others(
     cx: &mut compositor::Context,
-    _args: Args,
+    args: Args,
     event: PromptEvent,
 ) -> anyhow::Result<()> {
     if event != PromptEvent::Validate {
         return Ok(());
     }
 
-    let document_ids = buffer_gather_others_impl(cx.editor);
+    let document_ids = buffer_gather_others_impl(cx.editor, args.has_flag("skip-visible"));
     buffer_close_by_ids_impl(cx, &document_ids, false)
 }
 
 fn force_buffer_close_others(
     cx: &mut compositor::Context,
-    _args: Args,
+    args: Args,
     event: PromptEvent,
 ) -> anyhow::Result<()> {
     if event != PromptEvent::Validate {
         return Ok(());
     }
 
-    let document_ids = buffer_gather_others_impl(cx.editor);
+    let document_ids = buffer_gather_others_impl(cx.editor, args.has_flag("skip-visible"));
     buffer_close_by_ids_impl(cx, &document_ids, true)
 }
 
@@ -322,7 +335,11 @@ fn buffer_previous(
     Ok(())
 }
 
-fn write_impl(cx: &mut compositor::Context, path: Option<&str>, force: bool) -> anyhow::Result<()> {
+fn write_impl(
+    cx: &mut compositor::Context,
+    path: Option<&str>,
+    options: WriteOptions,
+) -> anyhow::Result<()> {
     let config = cx.editor.config();
     let jobs = &mut cx.jobs;
     let (view, doc) = current!(cx.editor);
@@ -341,14 +358,14 @@ fn write_impl(cx: &mut compositor::Context, path: Option<&str>, force: bool) -> 
     doc.append_changes_to_history(view);
 
     let (view, doc) = current_ref!(cx.editor);
-    let fmt = if config.auto_format {
+    let fmt = if config.auto_format && options.auto_format {
         doc.auto_format(cx.editor).map(|fmt| {
             let callback = make_format_callback(
                 doc.id(),
                 doc.version(),
                 view.id,
                 fmt,
-                Some((path.map(Into::into), force)),
+                Some((path.map(Into::into), options.force)),
             );
 
             jobs.add(Job::with_callback(callback).wait_before_exiting());
@@ -359,7 +376,7 @@ fn write_impl(cx: &mut compositor::Context, path: Option<&str>, force: bool) -> 
 
     if fmt.is_none() {
         let id = doc.id();
-        cx.editor.save(id, path, force)?;
+        cx.editor.save(id, path, options.force)?;
     }
 
     Ok(())
@@ -424,12 +441,25 @@ fn insert_final_newline(doc: &mut Document, view_id: ViewId) {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct WriteOptions {
+    pub force: bool,
+    pub auto_format: bool,
+}
+
 fn write(cx: &mut compositor::Context, args: Args, event: PromptEvent) -> anyhow::Result<()> {
     if event != PromptEvent::Validate {
         return Ok(());
     }
 
-    write_impl(cx, args.first(), false)
+    write_impl(
+        cx,
+        args.first(),
+        WriteOptions {
+            force: false,
+            auto_format: !args.has_flag(WRITE_NO_FORMAT_FLAG.name),
+        },
+    )
 }
 
 fn force_write(cx: &mut compositor::Context, args: Args, event: PromptEvent) -> anyhow::Result<()> {
@@ -437,7 +467,14 @@ fn force_write(cx: &mut compositor::Context, args: Args, event: PromptEvent) -> 
         return Ok(());
     }
 
-    write_impl(cx, args.first(), true)
+    write_impl(
+        cx,
+        args.first(),
+        WriteOptions {
+            force: true,
+            auto_format: !args.has_flag(WRITE_NO_FORMAT_FLAG.name),
+        },
+    )
 }
 
 fn write_buffer_close(
@@ -449,7 +486,14 @@ fn write_buffer_close(
         return Ok(());
     }
 
-    write_impl(cx, args.first(), false)?;
+    write_impl(
+        cx,
+        args.first(),
+        WriteOptions {
+            force: false,
+            auto_format: !args.has_flag(WRITE_NO_FORMAT_FLAG.name),
+        },
+    )?;
 
     let document_ids = buffer_gather_paths_impl(cx.editor, args);
     buffer_close_by_ids_impl(cx, &document_ids, false)
@@ -464,7 +508,14 @@ fn force_write_buffer_close(
         return Ok(());
     }
 
-    write_impl(cx, args.first(), true)?;
+    write_impl(
+        cx,
+        args.first(),
+        WriteOptions {
+            force: true,
+            auto_format: !args.has_flag(WRITE_NO_FORMAT_FLAG.name),
+        },
+    )?;
 
     let document_ids = buffer_gather_paths_impl(cx.editor, args);
     buffer_close_by_ids_impl(cx, &document_ids, false)
@@ -645,7 +696,14 @@ fn write_quit(cx: &mut compositor::Context, args: Args, event: PromptEvent) -> a
         return Ok(());
     }
 
-    write_impl(cx, args.first(), false)?;
+    write_impl(
+        cx,
+        args.first(),
+        WriteOptions {
+            force: false,
+            auto_format: !args.has_flag(WRITE_NO_FORMAT_FLAG.name),
+        },
+    )?;
     cx.block_try_flush_writes()?;
     quit(cx, Args::default(), event)
 }
@@ -659,7 +717,14 @@ fn force_write_quit(
         return Ok(());
     }
 
-    write_impl(cx, args.first(), true)?;
+    write_impl(
+        cx,
+        args.first(),
+        WriteOptions {
+            force: true,
+            auto_format: !args.has_flag(WRITE_NO_FORMAT_FLAG.name),
+        },
+    )?;
     cx.block_try_flush_writes()?;
     force_quit(cx, Args::default(), event)
 }
@@ -781,7 +846,7 @@ pub fn write_all_impl(
     Ok(())
 }
 
-fn write_all(cx: &mut compositor::Context, _args: Args, event: PromptEvent) -> anyhow::Result<()> {
+fn write_all(cx: &mut compositor::Context, args: Args, event: PromptEvent) -> anyhow::Result<()> {
     if event != PromptEvent::Validate {
         return Ok(());
     }
@@ -791,14 +856,14 @@ fn write_all(cx: &mut compositor::Context, _args: Args, event: PromptEvent) -> a
         WriteAllOptions {
             force: false,
             write_scratch: true,
-            auto_format: true,
+            auto_format: !args.has_flag(WRITE_NO_FORMAT_FLAG.name),
         },
     )
 }
 
 fn force_write_all(
     cx: &mut compositor::Context,
-    _args: Args,
+    args: Args,
     event: PromptEvent,
 ) -> anyhow::Result<()> {
     if event != PromptEvent::Validate {
@@ -810,14 +875,14 @@ fn force_write_all(
         WriteAllOptions {
             force: true,
             write_scratch: true,
-            auto_format: true,
+            auto_format: !args.has_flag(WRITE_NO_FORMAT_FLAG.name),
         },
     )
 }
 
 fn write_all_quit(
     cx: &mut compositor::Context,
-    _args: Args,
+    args: Args,
     event: PromptEvent,
 ) -> anyhow::Result<()> {
     if event != PromptEvent::Validate {
@@ -828,7 +893,7 @@ fn write_all_quit(
         WriteAllOptions {
             force: false,
             write_scratch: true,
-            auto_format: true,
+            auto_format: !args.has_flag(WRITE_NO_FORMAT_FLAG.name),
         },
     )?;
     quit_all_impl(cx, false)
@@ -836,7 +901,7 @@ fn write_all_quit(
 
 fn force_write_all_quit(
     cx: &mut compositor::Context,
-    _args: Args,
+    args: Args,
     event: PromptEvent,
 ) -> anyhow::Result<()> {
     if event != PromptEvent::Validate {
@@ -847,7 +912,7 @@ fn force_write_all_quit(
         WriteAllOptions {
             force: true,
             write_scratch: true,
-            auto_format: true,
+            auto_format: !args.has_flag(WRITE_NO_FORMAT_FLAG.name),
         },
     );
     quit_all_impl(cx, true)
@@ -2631,6 +2696,18 @@ fn noop(_cx: &mut compositor::Context, _args: Args, _event: PromptEvent) -> anyh
     Ok(())
 }
 
+/// This command accepts a single boolean --skip-visible flag and no positionals.
+const BUFFER_CLOSE_OTHERS_SIGNATURE: Signature = Signature {
+    positionals: (0, Some(0)),
+    flags: &[Flag {
+        name: "skip-visible",
+        alias: Some('s'),
+        doc: "don't close buffers that are visible",
+        ..Flag::DEFAULT
+    }],
+    ..Signature::DEFAULT
+};
+
 // TODO: SHELL_SIGNATURE should specify var args for arguments, so that just completers::filename can be used,
 // but Signature does not yet allow for var args.
 
@@ -2647,6 +2724,12 @@ const SHELL_COMPLETER: CommandCompleter = CommandCompleter::positional(&[
     // Shell argument(s)
     completers::repeating_filenames,
 ]);
+
+const WRITE_NO_FORMAT_FLAG: Flag = Flag {
+    name: "no-format",
+    doc: "skip auto-formatting",
+    ..Flag::DEFAULT
+};
 
 pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
     TypableCommand {
@@ -2710,10 +2793,7 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         doc: "Close all buffers but the currently focused one.",
         fun: buffer_close_others,
         completer: CommandCompleter::none(),
-        signature: Signature {
-            positionals: (0, Some(0)),
-            ..Signature::DEFAULT
-        },
+        signature: BUFFER_CLOSE_OTHERS_SIGNATURE,
     },
     TypableCommand {
         name: "buffer-close-others!",
@@ -2721,10 +2801,7 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         doc: "Force close all buffers but the currently focused one.",
         fun: force_buffer_close_others,
         completer: CommandCompleter::none(),
-        signature: Signature {
-            positionals: (0, Some(0)),
-            ..Signature::DEFAULT
-        },
+        signature: BUFFER_CLOSE_OTHERS_SIGNATURE,
     },
     TypableCommand {
         name: "buffer-close-all",
@@ -2778,6 +2855,7 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         completer: CommandCompleter::positional(&[completers::filename]),
         signature: Signature {
             positionals: (0, Some(1)),
+            flags: &[WRITE_NO_FORMAT_FLAG],
             ..Signature::DEFAULT
         },
     },
@@ -2789,6 +2867,7 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         completer: CommandCompleter::positional(&[completers::filename]),
         signature: Signature {
             positionals: (0, Some(1)),
+            flags: &[WRITE_NO_FORMAT_FLAG],
             ..Signature::DEFAULT
         },
     },
@@ -2800,6 +2879,7 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         completer: CommandCompleter::positional(&[completers::filename]),
         signature: Signature {
             positionals: (0, Some(1)),
+            flags: &[WRITE_NO_FORMAT_FLAG],
             ..Signature::DEFAULT
         },
     },
@@ -2811,6 +2891,7 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         completer: CommandCompleter::positional(&[completers::filename]),
         signature: Signature {
             positionals: (0, Some(1)),
+            flags: &[WRITE_NO_FORMAT_FLAG],
             ..Signature::DEFAULT
         },
     },
@@ -2891,6 +2972,7 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         completer: CommandCompleter::positional(&[completers::filename]),
         signature: Signature {
             positionals: (0, Some(1)),
+            flags: &[WRITE_NO_FORMAT_FLAG],
             ..Signature::DEFAULT
         },
     },
@@ -2902,6 +2984,7 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         completer: CommandCompleter::positional(&[completers::filename]),
         signature: Signature {
             positionals: (0, Some(1)),
+            flags: &[WRITE_NO_FORMAT_FLAG],
             ..Signature::DEFAULT
         },
     },
@@ -2913,6 +2996,7 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         completer: CommandCompleter::none(),
         signature: Signature {
             positionals: (0, Some(0)),
+            flags: &[WRITE_NO_FORMAT_FLAG],
             ..Signature::DEFAULT
         },
     },
@@ -2924,6 +3008,7 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         completer: CommandCompleter::none(),
         signature: Signature {
             positionals: (0, Some(0)),
+            flags: &[WRITE_NO_FORMAT_FLAG],
             ..Signature::DEFAULT
         },
     },
@@ -2935,6 +3020,7 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         completer: CommandCompleter::none(),
         signature: Signature {
             positionals: (0, Some(0)),
+            flags: &[WRITE_NO_FORMAT_FLAG],
             ..Signature::DEFAULT
         },
     },
@@ -2946,6 +3032,7 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         completer: CommandCompleter::none(),
         signature: Signature {
             positionals: (0, Some(0)),
+            flags: &[WRITE_NO_FORMAT_FLAG],
             ..Signature::DEFAULT
         },
     },
