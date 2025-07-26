@@ -132,6 +132,7 @@ The following statusline elements can be configured:
 | `file-name` | The path/name of the opened file |
 | `file-absolute-path` | The absolute path/name of the opened file |
 | `file-base-name` | The basename of the opened file |
+| `current-working-directory` | The current working directory  |
 | `file-modification-indicator` | The indicator to show whether the file is modified (a `[+]` appears when there are unsaved changes) |
 | `file-encoding` | The encoding of the opened file if it differs from UTF-8 |
 | `file-line-ending` | The file line endings (CRLF or LF) |
@@ -469,15 +470,6 @@ fn main() {
 }
 ```
 
-
-The new diagnostic rendering is not yet enabled by default. As soon as end of line or inline diagnostics are enabled the old diagnostics rendering is automatically disabled. The recommended default setting are:
-
-```toml
-[editor]
-end-of-line-diagnostics = "hint"
-[editor.inline-diagnostics]
-cursor-line = "warning" # show warnings and errors on the cursorline inline
-```
 ### `[editor.word-completion]` Section
 
 Options for controlling completion of words from open buffers.
@@ -512,4 +504,3 @@ The state is formatted with bincode, and stored in files in the state directory 
 | `old-files-trim` | number of old-files entries to keep when helix trims the state files at startup | `100` |
 | `commands-trim` | number of command history entries to keep when helix trims the state files at startup | `100` |
 | `search-trim` | number of search history entries to keep when helix trims the state files at startup | `100` |
-
