@@ -824,6 +824,16 @@ name = "gowork"
 source = { git = "https://github.com/omertuc/tree-sitter-go-work", rev = "6dd9dd79fb51e9f2abc829d5e97b15015b6a8ae2" }
 
 [[language]]
+name = "go-format-string"
+scope = "source.go-format-string"
+file-types = []
+injection-regex = "go-format-string"
+
+[[grammar]]
+name = "go-format-string"
+source = { git = "https://codeberg.org/kpbaks/tree-sitter-go-format-string", rev = "45b559b74be97535abfc77ade4405343a43e5ca4" }
+
+[[language]]
 name = "javascript"
 scope = "source.js"
 injection-regex = "(js|javascript)"
@@ -1465,6 +1475,8 @@ comment-token = "#"
 indent = { tab-width = 2, unit = "  " }
 language-servers = [ "yaml-language-server", "ansible-language-server" ]
 injection-regex = "yml|yaml"
+formatter = { command = "yamlfmt", args = ['-'] }
+auto-format = true
 
 [[grammar]]
 name = "yaml"
@@ -4408,6 +4420,22 @@ language-servers = ["sourcepawn-studio"]
 [[grammar]]
 name = "sourcepawn"
 source = { git = "https://github.com/nilshelmig/tree-sitter-sourcepawn", rev = "f2af8d0dc14c6790130cceb2a20027eb41a8297c" }
+
+
+[[grammar]]
+name = "vim"
+source = { git = "https://github.com/tree-sitter-grammars/tree-sitter-vim", rev = "f3cd62d8bd043ef20507e84bb6b4b53731ccf3a7" }
+
+[[language]]
+name = "vim"
+scope = "source.vim"
+injection-regex = "vim"
+comment-token = '"'
+indent = { tab-width = 4, unit = "\t" }
+file-types = [
+  "vim",
+  { glob = ".vimrc" },
+]
 
 [[language]]
 name = "tlaplus"
