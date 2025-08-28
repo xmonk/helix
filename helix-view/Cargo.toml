@@ -46,11 +46,16 @@ chardetng = "0.1"
 
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-toml = "0.8"
+serde_regex = "1.1.0"
+toml.workspace = true
 log = "~0.4"
+
+regex.workspace = true
 
 parking_lot.workspace = true
 thiserror.workspace = true
+
+kstring = "2.0"
 
 [target.'cfg(windows)'.dependencies]
 clipboard-win = { version = "5.4", features = ["std"] }
