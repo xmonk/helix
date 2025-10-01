@@ -5,7 +5,7 @@ use helix_core::{coords_at_pos, encoding, Position};
 use helix_lsp::lsp::DiagnosticSeverity;
 use helix_view::document::DEFAULT_LANGUAGE_NAME;
 use helix_view::{
-    document::{Mode, SCRATCH_BUFFER_NAME},
+    document::{Mode, SearchMatch, SearchMatchLimit, SCRATCH_BUFFER_NAME},
     graphics::Rect,
     theme::Style,
     Document, Editor, View,
@@ -158,6 +158,8 @@ where
         helix_view::editor::StatusLineElement::Spacer => render_spacer,
         helix_view::editor::StatusLineElement::VersionControl => render_version_control,
         helix_view::editor::StatusLineElement::Register => render_register,
+        helix_view::editor::StatusLineElement::SearchPosition => render_search_position,
+        helix_view::editor::StatusLineElement::CurrentWorkingDirectory => render_cwd,
     }
 }
 
@@ -557,6 +559,19 @@ where
     }
 }
 
+fn render_search_position<'a, F>(context: &mut RenderContext<'a>, write: F)
+where
+    F: Fn(&mut RenderContext<'a>, Span<'a>) + Copy,
+{
+    if let Some(SearchMatch { idx, count }) = context.doc.get_last_search_match(context.view.id) {
+        let count_str = match count {
+            SearchMatchLimit::Limitless(count) => format!("{}", count),
+            SearchMatchLimit::Limited(max) => format!(">{}", max),
+        };
+        write(context, format!(" [{}/{}] ", idx, count_str).into());
+    }
+}
+
 fn render_file_indent_style<'a, F>(context: &mut RenderContext<'a>, write: F)
 where
     F: Fn(&mut RenderContext<'a>, Span<'a>) + Copy,
@@ -572,4 +587,17 @@ where
             }
         },
     );
+}
+
+fn render_cwd<'a, F>(context: &mut RenderContext<'a>, write: F)
+where
+    F: Fn(&mut RenderContext<'a>, Span<'a>) + Copy,
+{
+    let cwd = helix_stdx::env::current_working_dir();
+    let cwd = cwd
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_string();
+    write(context, cwd.into())
 }
