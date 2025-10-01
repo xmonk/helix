@@ -12,7 +12,7 @@ use helix_view::{
     document::{DocumentOpenError, DocumentSavedEventResult},
     editor::{ConfigEvent, EditorEvent},
     graphics::Rect,
-    theme,
+    persistence, theme,
     tree::Layout,
     Align, Editor,
 };
@@ -24,7 +24,7 @@ use crate::{
     compositor::{Compositor, Event},
     config::Config,
     handlers,
-    job::Jobs,
+    job::{Job, Jobs},
     keymap::Keymaps,
     ui::{self, overlay::overlaid},
 };
@@ -32,7 +32,7 @@ use crate::{
 use log::{debug, error, info, warn};
 #[cfg(not(feature = "integration"))]
 use std::io::stdout;
-use std::{io::stdin, path::Path, sync::Arc};
+use std::{collections::HashMap, io::stdin, path::Path, sync::Arc};
 
 #[cfg(not(windows))]
 use anyhow::Context;
@@ -114,6 +114,16 @@ impl Application {
         let mut compositor = Compositor::new(area);
         let config = Arc::new(ArcSwap::from_pointee(config));
         let handlers = handlers::setup(config.clone());
+        let persistence_config = config.load().editor.persistence.clone();
+        let old_file_locs = if persistence_config.old_files {
+            HashMap::from_iter(
+                persistence::read_file_history()
+                    .into_iter()
+                    .map(|entry| (entry.path.clone(), (entry.view_position, entry.selection))),
+            )
+        } else {
+            HashMap::new()
+        };
         let mut editor = Editor::new(
             area,
             Arc::new(theme_loader),
@@ -122,8 +132,29 @@ impl Application {
                 &config.editor
             })),
             handlers,
+            old_file_locs,
         );
         Self::load_configured_theme(&mut editor, &config.load());
+
+        // Should we be doing these in background tasks?
+        if persistence_config.commands {
+            editor
+                .registers
+                .write(':', persistence::read_command_history())
+                .unwrap();
+        }
+        if persistence_config.search {
+            editor
+                .registers
+                .write('/', persistence::read_search_history())
+                .unwrap();
+        }
+        if persistence_config.clipboard {
+            editor
+                .registers
+                .write('"', persistence::read_clipboard_file())
+                .unwrap();
+        }
 
         let keys = Box::new(Map::new(Arc::clone(&config), |config: &Config| {
             &config.keys
@@ -148,7 +179,7 @@ impl Application {
             // If there are any more files specified, open them
             if files_it.peek().is_some() {
                 let mut nr_of_files = 0;
-                for (file, pos) in files_it {
+                for (file, positions) in files_it {
                     nr_of_files += 1;
                     if file.is_dir() {
                         return Err(anyhow::anyhow!(
@@ -185,15 +216,23 @@ impl Application {
                         // NOTE: this isn't necessarily true anymore. If
                         // `--vsplit` or `--hsplit` are used, the file which is
                         // opened last is focused on.
-                        let view_id = editor.tree.focus;
-                        let doc = doc_mut!(editor, &doc_id);
-                        let selection = pos
-                            .into_iter()
-                            .map(|coords| {
-                                Range::point(pos_at_coords(doc.text().slice(..), coords, true))
-                            })
-                            .collect();
-                        doc.set_selection(view_id, selection);
+                        // Only set position if non-default positions were explicitly provided
+                        let has_explicit_positions = !positions.is_empty()
+                            && !positions.iter().all(|pos| pos.row == 0 && pos.col == 0);
+
+                        if has_explicit_positions {
+                            let view_id = editor.tree.focus;
+                            let doc = doc_mut!(editor, &doc_id);
+                            let selection = positions
+                                .into_iter()
+                                .map(|coords| {
+                                    Range::point(pos_at_coords(doc.text().slice(..), coords, true))
+                                })
+                                .collect();
+                            doc.set_selection(view_id, selection);
+                            let (view, doc) = current!(editor);
+                            align_view(doc, view, Align::Center);
+                        }
                     }
                 }
 
@@ -206,10 +245,6 @@ impl Application {
                         nr_of_files,
                         if nr_of_files == 1 { "" } else { "s" } // avoid "Loaded 1 files." grammo
                     ));
-                    // align the view to center after all files are loaded,
-                    // does not affect views without pos since it is at the top
-                    let (view, doc) = current!(editor);
-                    align_view(doc, view, Align::Center);
                 }
             } else {
                 editor.new_file(Action::VerticalSplit);
@@ -234,13 +269,45 @@ impl Application {
         ])
         .context("build signal handler")?;
 
+        let jobs = Jobs::new();
+        if persistence_config.old_files {
+            let file_trim = persistence_config.old_files_trim;
+            jobs.add(
+                Job::new(async move {
+                    persistence::trim_file_history(file_trim);
+                    Ok(())
+                })
+                .wait_before_exiting(),
+            );
+        }
+        if persistence_config.commands {
+            let commands_trim = persistence_config.commands_trim;
+            jobs.add(
+                Job::new(async move {
+                    persistence::trim_command_history(commands_trim);
+                    Ok(())
+                })
+                .wait_before_exiting(),
+            );
+        }
+        if persistence_config.search {
+            let search_trim = persistence_config.search_trim;
+            jobs.add(
+                Job::new(async move {
+                    persistence::trim_search_history(search_trim);
+                    Ok(())
+                })
+                .wait_before_exiting(),
+            );
+        }
+
         let app = Self {
             compositor,
             terminal,
             editor,
             config,
             signals,
-            jobs: Jobs::new(),
+            jobs,
             lsp_progress: LspProgressMap::new(),
         };
 
