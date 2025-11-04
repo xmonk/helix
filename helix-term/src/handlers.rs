@@ -18,7 +18,7 @@ mod auto_save;
 pub mod completion;
 pub mod diagnostics;
 mod document_colors;
-mod prompt;
+pub mod prompt;
 mod signature_help;
 mod snippet;
 

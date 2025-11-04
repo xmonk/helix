@@ -279,6 +279,9 @@ impl Application {
                 .unwrap_or_else(|_| editor.new_file(Action::VerticalSplit));
         }
 
+        // Mark initialization as complete so prompt handler can start working
+        handlers::prompt::mark_initialization_complete();
+
         #[cfg(windows)]
         let signals = futures_util::stream::empty();
         #[cfg(not(windows))]
