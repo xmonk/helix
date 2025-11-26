@@ -122,6 +122,7 @@
 | html | ✓ | ✓ |  |  | ✓ | `vscode-html-language-server`, `superhtml` |
 | htmldjango | ✓ |  |  |  |  | `djlsp`, `vscode-html-language-server`, `superhtml` |
 | hurl | ✓ | ✓ | ✓ |  |  |  |
+| hy | ✓ |  |  |  |  | `hyuga` |
 | hyprlang | ✓ |  | ✓ |  |  | `hyprls` |
 | idris |  |  |  |  |  | `idris2-lsp` |
 | iex | ✓ |  |  |  |  |  |
@@ -261,7 +262,7 @@
 | supercollider | ✓ |  |  |  |  |  |
 | svelte | ✓ |  | ✓ |  |  | `svelteserver` |
 | sway | ✓ | ✓ | ✓ |  |  | `forc` |
-| swift | ✓ | ✓ |  |  | ✓ | `sourcekit-lsp` |
+| swift | ✓ | ✓ | ✓ |  | ✓ | `sourcekit-lsp` |
 | systemd | ✓ |  |  |  |  | `systemd-lsp` |
 | systemverilog | ✓ |  |  |  |  |  |
 | t32 | ✓ |  |  |  |  |  |
