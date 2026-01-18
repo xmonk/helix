@@ -134,7 +134,7 @@ solc = { command = "solc", args = ["--lsp"] }
 sourcekit-lsp = { command = "sourcekit-lsp" }
 spade-language-server = {command = "spade-language-server"}
 starpls = {command = "starpls"}
-svlangserver = { command = "svlangserver", args = [] }
+svlangserver = { command = "svlangserver", args = [], config.systemverilog.includeIndexing = ["*.{v,vh,sv,svh}", "**/*.{v,vh,sv,svh}"] }
 swipl = { command = "swipl", args = [ "-g", "use_module(library(lsp_server))", "-g", "lsp_server:main", "-t", "halt", "--", "stdio" ] }
 superhtml = {  command = "superhtml", args = ["lsp"]}
 tailwindcss-ls = { command = "tailwindcss-language-server", args = ["--stdio"] }
@@ -1534,6 +1534,16 @@ injection-regex = "luap"
 name = "luap"
 source = { git = "https://github.com/tree-sitter-grammars/tree-sitter-luap", rev = "c134aaec6acf4fa95fe4aa0dc9aba3eacdbbe55a" }
 
+[[language]]
+name = "lua-format-string"
+scope = "source.lua-format-string"
+file-types = []
+injection-regex = "lua-format-string"
+
+[[grammar]]
+name = "lua-format-string"
+source = { git = "https://codeberg.org/kpbaks/tree-sitter-lua-format-string", rev = "b667c8cab109df307e1b4d56b0b43f5c4a353533" }
+
 [[grammar]]
 name = "teal"
 source = { git = "https://github.com/euclidianAce/tree-sitter-teal", rev = "3db655924b2ff1c54fdf6371b5425ea6b5dccefe" }
@@ -2052,6 +2062,7 @@ file-types = [
 ]
 comment-token = "#"
 indent = { tab-width = 4, unit = "  " }
+formatter = { command = "dockerfmt" }
 language-servers = [ "docker-langserver", "docker-language-server" ]
 
 [[grammar]]
@@ -2692,7 +2703,7 @@ scope = "source.verilog"
 file-types = ["v", "vh"]
 comment-token = "//"
 block-comment-tokens = { start = "/*", end = "*/" }
-language-servers = [ "svlangserver" ]
+language-servers = ["verible-verilog-ls"]
 indent = { tab-width = 2, unit = "  " }
 injection-regex = "verilog"
 
@@ -2707,7 +2718,7 @@ file-types = ["sv", "svh"]
 comment-token = "//"
 block-comment-tokens = { start = "/*", end = "*/" }
 indent = { tab-width = 2, unit = "  " }
-language-servers = ["verible-verilog-ls"]
+language-servers = ["svlangserver", "verible-verilog-ls"]
 
 [[grammar]]
 name = "systemverilog"
@@ -5178,3 +5189,18 @@ scope = "source.qmv"
 file-types = [ { glob = "/tmp/qmv*" } ]
 indent = { tab-width = 8, unit = "        " }
 soft-wrap = { enable = false }
+
+[[language]]
+name = "klog"
+scope = "source.klg"
+file-types = [ "klg" ]
+injection-regex = "klg"
+indent = { tab-width = 4, unit="    "}
+[language.auto-pairs]
+'(' = ')'
+'"' = '"'
+"'" = "'"
+
+[[grammar]]
+name = "klog"
+source = { git = "https://github.com/Ansimorph/tree-sitter-klog/", rev = "0b215fe75bdeb8368546e3cee36aca8c19212d06" }

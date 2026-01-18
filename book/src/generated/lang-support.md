@@ -152,6 +152,7 @@
 | kcl | ✓ |  |  |  |  | `kcl-language-server` |
 | kconfig | ✓ |  | ✓ |  |  |  |
 | kdl | ✓ | ✓ | ✓ | ✓ |  |  |
+| klog | ✓ |  |  |  |  |  |
 | koka | ✓ |  | ✓ |  |  | `koka` |
 | kotlin | ✓ | ✓ | ✓ | ✓ |  | `kotlin-language-server` |
 | koto | ✓ | ✓ | ✓ |  | ✓ | `koto-ls` |
@@ -166,6 +167,7 @@
 | log | ✓ |  |  |  |  |  |
 | lpf | ✓ |  |  |  |  |  |
 | lua | ✓ | ✓ | ✓ |  | ✓ | `lua-language-server` |
+| lua-format-string | ✓ |  |  |  |  |  |
 | luap | ✓ |  |  |  |  |  |
 | luau | ✓ | ✓ | ✓ |  |  | `luau-lsp` |
 | mail | ✓ | ✓ |  |  |  |  |
@@ -268,7 +270,7 @@
 | sway | ✓ | ✓ | ✓ |  |  | `forc` |
 | swift | ✓ | ✓ | ✓ |  | ✓ | `sourcekit-lsp` |
 | systemd | ✓ |  |  |  |  | `systemd-lsp` |
-| systemverilog | ✓ |  |  |  |  | `verible-verilog-ls` |
+| systemverilog | ✓ |  |  |  |  | `svlangserver`, `verible-verilog-ls` |
 | t32 | ✓ |  |  |  |  |  |
 | tablegen | ✓ | ✓ | ✓ |  |  |  |
 | tact | ✓ | ✓ | ✓ |  |  |  |
@@ -295,7 +297,7 @@
 | v | ✓ | ✓ | ✓ |  |  | `v-analyzer` |
 | vala | ✓ | ✓ |  |  |  | `vala-language-server` |
 | vento | ✓ |  |  |  |  |  |
-| verilog | ✓ | ✓ |  |  |  | `svlangserver` |
+| verilog | ✓ | ✓ |  |  |  | `verible-verilog-ls` |
 | vhdl | ✓ |  |  |  |  | `vhdl_ls` |
 | vhs | ✓ |  |  |  |  |  |
 | vim | ✓ |  |  |  |  |  |
