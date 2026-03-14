@@ -126,7 +126,7 @@ impl Application {
         let backend = TestBackend::new(120, 150);
 
         let theme_mode = backend.get_theme_mode();
-        let terminal = Terminal::new(backend)?;
+        let mut terminal = Terminal::new(backend)?;
         let area = terminal.size();
         let mut compositor = Compositor::new(area);
         let config = Arc::new(ArcSwap::from_pointee(config));
@@ -151,12 +151,7 @@ impl Application {
             handlers,
             old_file_locs,
         );
-        Self::load_configured_theme(
-            &mut editor,
-            &config.load(),
-            terminal.backend().supports_true_color(),
-            theme_mode,
-        );
+        Self::load_configured_theme(&mut editor, &config.load(), &mut terminal, theme_mode);
 
         // Should we be doing these in background tasks?
         if persistence_config.commands {
@@ -465,6 +460,15 @@ impl Application {
                 };
                 self.config.store(Arc::new(app_config));
             }
+            ConfigEvent::ThemeChanged => {
+                let _ = self.terminal.backend_mut().set_background_color(
+                    self.editor
+                        .theme
+                        .try_get_exact("ui.background")
+                        .and_then(|style| style.bg),
+                );
+                return;
+            }
         }
 
         // Update all the relevant members in the editor after updating
@@ -492,7 +496,7 @@ impl Application {
             Self::load_configured_theme(
                 &mut self.editor,
                 &default_config,
-                self.terminal.backend().supports_true_color(),
+                &mut self.terminal,
                 self.theme_mode,
             );
 
@@ -530,10 +534,12 @@ impl Application {
     fn load_configured_theme(
         editor: &mut Editor,
         config: &Config,
-        terminal_true_color: bool,
+        terminal: &mut Terminal,
         mode: Option<theme::Mode>,
     ) {
-        let true_color = terminal_true_color || config.editor.true_color || crate::true_color();
+        let true_color = terminal.backend().supports_true_color()
+            || config.editor.true_color
+            || crate::true_color();
         let theme = config
             .theme
             .as_ref()
@@ -560,7 +566,13 @@ impl Application {
                     })
             })
             .unwrap_or_else(|| editor.theme_loader.default_theme(true_color));
+        let background_color = theme
+            .try_get_exact("ui.background")
+            .and_then(|style| style.bg);
         editor.set_theme(theme);
+        let _ = terminal
+            .backend_mut()
+            .set_background_color(background_color);
     }
 
     #[cfg(windows)]
@@ -790,7 +802,7 @@ impl Application {
                 Self::load_configured_theme(
                     &mut self.editor,
                     &self.config.load(),
-                    self.terminal.backend().supports_true_color(),
+                    &mut self.terminal,
                     Some(mode.into()),
                 );
                 true
