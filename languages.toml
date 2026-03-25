@@ -1310,6 +1310,7 @@ file-types = [
   { glob = "bash_completion" },
   { glob = "bash-completion/completions/*" },
   { glob = "bash_completion.d/*" },
+  { glob = "bin/activate" },
   { glob = ".Renviron" },
   { glob = ".xprofile" },
   { glob = ".xsession" },
@@ -3388,6 +3389,14 @@ file-types = [
   "target",
   "timer",
   { glob = "systemd/**/*.conf" },
+  # Podman quadlets
+  "container",
+  { glob = "containers/systemd/**/*.pod" }, # extension alone would conflict with Perl POD
+  "kube",
+  "network",
+  "volume",
+  "build",
+  "image",
 ]
 injection-regex = "systemd"
 comment-token = "#"
@@ -3401,11 +3410,6 @@ file-types = [
   "ini",
   "desktop",
   { glob = "mimeapps.list" },
-  # Podman quadlets
-  "container",
-  "volume",
-  "kube",
-  "network",
   { glob = ".editorconfig" },
   { glob = ".npmrc" },
   { glob = "hgrc" },
