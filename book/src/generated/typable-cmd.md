@@ -98,3 +98,5 @@
 | `:reload-history` | Reload history files for persistent state |
 | `:echo` | Prints the given arguments to the statusline. |
 | `:noop` | Does nothing. |
+| `:workspace-trust` | Add current workspace to the list of trusted workspaces. |
+| `:workspace-untrust` | Remove current workspace from the list of trusted workspaces. |
