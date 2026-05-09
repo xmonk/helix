@@ -2481,7 +2481,6 @@ fn search_next_or_prev_impl(cx: &mut Context, movement: Movement, direction: Dir
         } else {
             false
         };
-        let wrap_around = search_config.wrap_around;
         let is_crlf = doc!(cx.editor).line_ending == LineEnding::Crlf;
         if let Ok(regex) = rope::RegexBuilder::new()
             .syntax(
