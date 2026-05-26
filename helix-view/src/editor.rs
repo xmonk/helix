@@ -2145,7 +2145,7 @@ impl Editor {
             if doc.selections().contains_key(&id) {
                 if let Some(path) = doc.path() {
                     file_locs.push(FileHistoryEntry::new(
-                        path.clone(),
+                        path.to_path_buf().clone(),
                         doc.view_offset(id),
                         doc.selection(id).clone(),
                     ));
@@ -2209,7 +2209,7 @@ impl Editor {
                 if view.doc == doc_id {
                     if let Some(path) = doc.path() {
                         file_locs.push(FileHistoryEntry::new(
-                            path.clone(),
+                            path.to_path_buf().clone(),
                             doc.view_offset(view.id),
                             doc.selection(view.id).clone(),
                         ));
