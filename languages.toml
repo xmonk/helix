@@ -35,6 +35,7 @@ csharp-ls = { command = "csharp-ls" }
 cuelsp = { command = "cue", args = ["lsp", "serve"] }
 dart = { command = "dart", args = ["language-server", "--client-id=helix"] }
 debian-lsp = { command = "debian-lsp" }
+deno = { command = "deno", args = ["lsp"], config.deno.enable = true }
 dhall-lsp-server = { command = "dhall-lsp-server" }
 djlsp = { command = "djlsp" }
 docker-langserver = { command = "docker-langserver", args = ["--stdio"] }
@@ -146,7 +147,7 @@ svlangserver = { command = "svlangserver", args = [], config.systemverilog.inclu
 swipl = { command = "swipl", args = [ "-g", "use_module(library(lsp_server))", "-g", "lsp_server:main", "-t", "halt", "--", "stdio" ] }
 superhtml = {  command = "superhtml", args = ["lsp"]}
 tailwindcss-ls = { command = "tailwindcss-language-server", args = ["--stdio"] }
-taplo = { command = "taplo", args = ["lsp", "stdio"] }
+taplo = { command = "taplo", args = ["lsp", "stdio"], config = {} }
 templ = { command = "templ", args = ["lsp"] }
 terraform-ls = { command = "terraform-ls", args = ["serve"] }
 texlab = { command = "texlab" }
@@ -1596,7 +1597,7 @@ scope = "source.lua"
 file-types = ["lua", "rockspec"]
 shebangs = ["lua", "luajit"]
 roots = [".luarc.json", ".luacheckrc", ".stylua.toml", "selene.toml", ".git"]
-comment-token = "--"
+comment-tokens = ["--", "---"]
 block-comment-tokens = { start = "--[[", end = "--]]" }
 indent = { tab-width = 2, unit = "  " }
 language-servers = [ "lua-language-server" ]
@@ -2517,7 +2518,7 @@ language-servers = [ "r" ]
 
 [[grammar]]
 name = "r"
-source = { git = "https://github.com/r-lib/tree-sitter-r", rev = "cc04302e1bff76fa02e129f332f44636813b0c3c" }
+source = { git = "https://github.com/r-lib/tree-sitter-r", rev = "0e6ef7741712c09dc3ee6e81c42e919820cc65ef" }
 
 [[language]]
 name = "rmarkdown"
@@ -4794,7 +4795,7 @@ indent = { tab-width = 2, unit = "  " }
 
 [[grammar]]
 name = "ghostty"
-source = { git = "https://github.com/bezhermoso/tree-sitter-ghostty" , rev = "8438a93b44367e962b2ea3a3b6511885bebd196a" }
+source = { git = "https://github.com/bezhermoso/tree-sitter-ghostty" , rev = "4a0fd2ae492c6bbfd13a134067ee4258f0e0f189" }
 
 [[language]]
 name = "tera"

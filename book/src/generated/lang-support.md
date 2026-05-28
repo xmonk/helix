@@ -162,7 +162,7 @@
 | koka | ✓ |  | ✓ |  |  | `koka` |
 | kotlin | ✓ | ✓ | ✓ | ✓ |  | `kotlin-language-server` |
 | koto | ✓ | ✓ | ✓ |  | ✓ | `koto-ls` |
-| latex | ✓ | ✓ |  |  |  | `texlab` |
+| latex | ✓ | ✓ | ✓ |  |  | `texlab` |
 | ld | ✓ |  | ✓ |  |  |  |
 | ldif | ✓ |  |  |  |  |  |
 | lean | ✓ |  |  |  |  | `lake` |
@@ -237,7 +237,7 @@
 | qmv |  |  |  |  |  |  |
 | quarto | ✓ |  | ✓ |  |  |  |
 | quint | ✓ |  |  |  |  | `quint-language-server` |
-| r | ✓ |  |  |  |  | `R` |
+| r | ✓ | ✓ |  | ✓ | ✓ | `R` |
 | racket | ✓ |  | ✓ |  | ✓ | `racket` |
 | regex | ✓ |  |  |  | ✓ |  |
 | rego | ✓ |  |  |  |  | `regols` |
