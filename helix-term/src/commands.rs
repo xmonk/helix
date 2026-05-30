@@ -1742,7 +1742,7 @@ fn find_char(cx: &mut Context, direction: Direction, inclusive: bool, extend: bo
                         (true, Direction::Forward) => cursor_head,
                         (true, Direction::Backward) => cursor_anchor,
                         (false, Direction::Forward) => cursor_head + 1,
-                        (false, Direction::Backward) => cursor_anchor - 1,
+                        (false, Direction::Backward) => cursor_anchor.saturating_sub(1),
                     };
 
                     search::find_nth_char(count, text, ch, search_start_pos, direction)
@@ -3759,6 +3759,7 @@ fn insert_at_line_end(cx: &mut Context) {
 // Enter insert mode and auto-indent the current line if it is empty.
 // If the line is not empty, move the cursor to the specified fallback position.
 fn insert_with_indent(cx: &mut Context, cursor_fallback: IndentFallbackPos) {
+    let was_select_mode = cx.editor.mode == Mode::Select;
     enter_insert_mode(cx);
 
     let (view, doc) = current!(cx.editor);
@@ -3812,7 +3813,7 @@ fn insert_with_indent(cx: &mut Context, cursor_fallback: IndentFallbackPos) {
                 IndentFallbackPos::LineEnd => line_end_char_index(&text, cursor_line),
             };
 
-            ranges.push(range.put_cursor(text, pos + offs, cx.editor.mode == Mode::Select));
+            ranges.push(range.put_cursor(text, pos + offs, was_select_mode));
 
             (cursor_line_start, cursor_line_start, None)
         }
@@ -4026,7 +4027,7 @@ fn normal_mode(cx: &mut Context) {
 fn push_jump(view: &mut View, doc: &mut Document) {
     doc.append_changes_to_history(view);
     let jump = (doc.id(), doc.selection(view.id).clone());
-    view.jumps.push(jump);
+    view.push_jump(doc, jump);
 }
 
 fn goto_line(cx: &mut Context) {
