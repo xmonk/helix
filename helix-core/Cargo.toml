@@ -61,5 +61,5 @@ textwrap = "0.16.2"
 regex-cursor = "0.1.5"
 
 [dev-dependencies]
-quickcheck = { version = "1", default-features = false }
+quickcheck.workspace = true
 indoc = "2.0.6"
