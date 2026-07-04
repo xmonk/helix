@@ -2012,15 +2012,9 @@ impl Document {
             .unwrap_or(false)
     }
 
-    pub fn servers_to_load(&self) -> bool {
-        self.language_config()
-            .map(|lang| !lang.language_servers.is_empty() || lang.debugger.is_some())
-            .unwrap_or(false)
-    }
-
     pub fn diff_handle(&self) -> Option<&DiffHandle> {
-        self.diff_handle.as_ref()
-    }
+         self.diff_handle.as_ref()
+     }
 
     /// Intialize/updates the differ for this document with a new base.
     pub fn set_diff_base(&mut self, diff_base: Vec<u8>) {
